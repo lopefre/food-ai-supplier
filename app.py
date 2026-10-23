@@ -13,6 +13,16 @@ import re
 # Настройка страницы Streamlit
 st.set_page_config(page_title="Поиск поставщиков Food", layout="wide")
 st.title("🥑 Сервис поиска и анализа поставщиков питания")
+# Скрываем сервисный серый футер хостинга Streamlit Cloud через инъекцию CSS
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    stDecoration {display:none;}
+    </style>
+    """, unsafe_allow_html=True)
+
 
 # 1. Структура данных для ИИ
 class SupplierInfo(BaseModel):
@@ -206,15 +216,13 @@ if query:
                 def clean_markdown_artifacts(text):
                     if not text:
                         return ""
-                    # Удаляем двойные звездочки, если вокруг них нет букв (одиночные висячие артефакты)
-                    text = re.sub(r'\*\*\s+\*\*', ' ', text)
-                    text = re.sub(r'\*\*\*\*', '', text)
-                    # Если модель поставила звездочки перед точкой или знаком препинания (типа ограничением**.)
-                    text = re.sub(r'\*\*([.,!?\s]|$)', r'\1', text)
-                    # И просто убираем любые оставшиеся битые двойные звездочки, которые портят вид
-                    text = text.replace("**", "")
-                    # УДАЛЯЕМ ДУБЛИ ЗАГОЛОВКОВ: убираем фразы типа "Итоговое резюме...", "Вердикт:" из начала текста
-                    text = re.sub(r'^(Итоговое резюме|Вердикт|Итоговая рекомендация|Резюме|Рекомендации|Рекомендация)\s*(для\s+[^:]+)?:\s*', '', text, flags=re.IGNORECASE)
+                    # Удаляем только пустые слипшиеся звездочки и явные баги генерации
+                    text = text.replace("****", "")
+                    text = text.replace("** **", " ")
+                    
+                    # Убираем дублирование заголовков в начале текста (если ИИ их продублировал)
+                    text = re.sub(r'^(Итоговое резюме|Вердикт|Итоговая рекомендация|Резюме)\s*(для\s+[^:]+)?:\s*', '', text, flags=re.IGNORECASE)
+                    
                     return text.strip()
     
                 # Если модель разделила текст по тегам, выводим красивую структуру
