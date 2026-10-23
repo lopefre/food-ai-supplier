@@ -183,25 +183,23 @@ if query:
             text_checklist = get_block(full_text, "ЧЕК_ЛИСТ")
             text_verdict = get_block(full_text, "ВЕРДИКТ")
 
-            # Отрисовываем интерфейс (Проверяющий будет в восторге от сочетания ИИ + UX)
+            # Отрисовываем интерфейс
             st.markdown("### 🎯 Стратегические сценарии закупки")
             tab1, tab2 = st.tabs(["🚀 Тестирование рынка и мелкий опт", "📦 Масштабирование и крупный опт"])
             
             with tab1:
-                st.markdown(f"""
-                <div style="background-color: #1E293B; padding: 20px; border-left: 5px solid #38BDF8; border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
-                    <h4 style="margin-top:0; color:#38BDF8; font-size: 18px;">💡 Экспертный разбор: Стратегия гибкого старта</h4>
-                    <p style="color: #E2E8F0; font-size: 15px;">{text_small}</p>
-                </div>
-                """, unsafe_allow_html=True)
+                # Нативный контейнер Streamlit с рамкой
+                with st.container(border=True):
+                    st.markdown("#### 💡 Экспертный разбор: Стратегия гибкого старта")
+                    # Мягко очищаем возможные дубликаты звездочек от модели перед выводом
+                    clean_small = text_small.replace("** **", "**").replace("****", "**")
+                    st.markdown(clean_small)
                 
             with tab2:
-                st.markdown(f"""
-                <div style="background-color: #1E293B; padding: 20px; border-left: 5px solid #10B981; border-radius: 6px; margin-bottom: 15px; line-height: 1.6;">
-                    <h4 style="margin-top:0; color:#10B981; font-size: 18px;">🏭 Экспертный разбор: Стратегия оптимизации затрат</h4>
-                    <p style="color: #E2E8F0; font-size: 15px;">{text_large}</p>
-                </div>
-                """, unsafe_allow_html=True)
+                with st.container(border=True):
+                    st.markdown("#### 🏭 Экспертный разбор: Стратегия оптимизации затрат")
+                    clean_large = text_large.replace("** **", "**").replace("****", "**")
+                    st.markdown(clean_large)
 
             # Выводим динамический чек-лист
             with st.expander("🔍 Инструкция для закупщика: Что проверить перед подписанием договора?", expanded=True):
