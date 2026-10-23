@@ -127,7 +127,7 @@ if query:
             cols = st.columns(len(results))
             for idx, card in enumerate(results):
                 with cols[idx]:
-                    st.image("https://icons8.com", width=60)
+                    st.markdown("### 🏢")
                     st.subheader(card.company_name)
                     st.markdown(f"🌐 **Сайт:** {MOCK_SERP[matched_category][idx]['url']}")
                     st.markdown(f"📦 **Минимальный заказ:** {card.min_order or 'Не указан'}")
