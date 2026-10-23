@@ -188,54 +188,47 @@ if query:
                 text_checklist = get_block(full_text, "ЧЕК_ЛИСТ")
                 text_verdict = get_block(full_text, "ВЕРДИКТ")
                 
-                # Если блоки успешно вытащились и они не пустые, строим красивую разметку
+                # ФУНКЦИЯ ДЛЯ КЛИНГИНГА: Убираем любые кривые звездочки модели в любом месте текста
+                def clean_markdown_artifacts(text):
+                    if not text:
+                        return ""
+                    # Удаляем двойные звездочки, если вокруг них нет букв (одиночные висячие артефакты)
+                    text = re.sub(r'\*\*\s+\*\*', ' ', text)
+                    text = re.sub(r'\*\*\*\*', '', text)
+                    # Если модель поставила звездочки перед точкой или знаком препинания (типа ограничением**.)
+                    text = re.sub(r'\*\*([.,!?\s]|$)', r'\1', text)
+                    # И просто убираем любые оставшиеся битые двойные звездочки, которые портят вид
+                    text = text.replace("**", "")
+                    return text.strip()
+    
+                # Если модель разделила текст по тегам, выводим красивую структуру
                 if text_small and text_large:
                     st.markdown("### 🎯 Стратегические сценарии закупки")
                     tab1, tab2 = st.tabs(["🚀 Тестирование рынка и мелкий опт", "📦 Масштабирование и крупный опт"])
                     
                     with tab1:
                         with st.container(border=True):
-                            st.markdown("#### 💡 Стратегия гибкого старта")
-                            st.markdown(text_small)
+                            st.markdown("#### 💡 Экспертный разбор: Стратегия гибкого старта")
+                            st.markdown(clean_markdown_artifacts(text_small))
                         
                     with tab2:
                         with st.container(border=True):
-                            st.markdown("#### 🏭 Стратегия оптимизации затрат")
-                            st.markdown(text_large)
-
-                # Выводим динамический чек-лист
-                if text_checklist:
-                    with st.expander("🔍 Что проверить перед подписанием договора?", expanded=True):
-                        # Очищаем чек-лист от возможных артефактов на стыке тегов
-                        clean_checklist = text_checklist.replace("** **", " ").replace("****", "")
-                        st.markdown(clean_checklist)
-                
-                # Финальный красивый акцент на итоговом вердикте без артефактов разметки
-                if text_verdict:
-                    st.markdown("---")
-                    # Очищаем финальный вердикт от сломанных двойных звёздочек, которые оставляет модель
-                    clean_verdict = text_verdict.replace("** **", " ").replace("****", "")
-                    # Дополнительно убираем звёздочки, если модель написала "ЭкоНива**" или "Компания**"
-                    clean_verdict = clean_verdict.replace("** ", " ").replace(" **", " ")
+                            st.markdown("#### 🏭 Экспертный разбор: Стратегия оптимизации затрат")
+                            st.markdown(clean_markdown_artifacts(text_large))
+    
+                    if text_checklist and text_checklist != "Аналитика формируется...":
+                        with st.expander("🔍 Инструкция для закупщика: Что проверить перед подписанием договора?", expanded=True):
+                            st.markdown(clean_markdown_artifacts(text_checklist))
                     
-                    # Проверяем: если на концах слов всё ещё висят две звёздочки, срезаем их аккуратно
-                    if clean_verdict.endswith("**"):
-                        clean_verdict = clean_verdict[:-2]
-                        
-                    st.markdown(f"⚖️ **Итоговая рекомендация ИИ** {clean_verdict}")
-
+                    if text_verdict and text_verdict != "Аналитика формируется...":
+                        st.divider()
+                        st.markdown(f"⚖️ **Итоговая рекомендация ИИ:** {clean_markdown_artifacts(text_verdict)}")
+                
                 else:
-                    # План Б, если регулярка дала сбой на границах
-                    st.markdown("### 🤖 Итоговая аналитика ИИ")
-                    with st.container(border=True):
-                        st.markdown(full_text)
-            else:
-                # План Б (ЖЕЛЕЗОБЕТОННЫЙ): Если ИИ проигнорировал теги, выводим весь классный подробный текст целиком
-                st.markdown("### 🤖 Итоговое экспертное заключение ИИ")
-                with st.container(border=True):
-                    # Просто убираем случайные артефакты, если они где-то проскочили
-                    clean_text = full_text.replace("[МЕЛКИЙ_ОПТ]", "").replace("[КРУПНЫЙ_ОПТ]", "").replace("[ЧЕК_ЛИСТ]", "").replace("[ВЕРДИКТ]", "")
-                    st.markdown(clean_text)
-            
+                    # ПЛАН Б: Если модель проигнорировала теги и выдала сплошной текст
+                    # МЫ НЕ создаем пустых контейнеров внизу. Просто выводим чистый текст
+                    st.markdown("### 🤖 Итоговое экспертное заключение ИИ")
+                    st.markdown(clean_markdown_artifacts(full_text))
+
         else:
             st.info("Пока в базе демо-прототипа есть категории: 'упаковка' и 'молоко'. Попробуйте ввести их.")
