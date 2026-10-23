@@ -4,9 +4,11 @@ from selenium import webdriver
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from langchain_mistralai import ChatMistralAI
+from langchain_core.messages import HumanMessage
 import time
 import json
-from langchain_core.messages import HumanMessage
+import re
+
 
 # Настройка страницы Streamlit
 st.set_page_config(page_title="Поиск Поставщиков Food", layout="wide")
@@ -167,39 +169,36 @@ if query:
 
             # Функция для безопасного вытаскивания блоков из текста ИИ
             def get_block(text, block_name):
-                try:
-                    parts = text.split(f"[{block_name}]")
-                    if len(parts) > 1:
-                        # Берем текст после маркера до начала следующего маркера
-                        block_content = parts[1].split("[")[0].strip()
-                        return block_content
-                except:
-                    pass
+                # Ищем текст от нужного маркера до следующего маркера в скобках [следующий] или до конца текста
+                pattern = rf"\[{block_name}\](.*?)(?=\[\w+\]|$)"
+                match = re.search(pattern, text, re.DOTALL)
+                if match:
+                    content = match.group(1).strip()
+                    # Очищаем от висячих звёздочек, маркеров списков и пустых строк в начале и конце
+                    content = re.sub(r"^[\s\*•-]+", "", content)
+                    content = re.sub(r"[\s\*•-]+$", "", content)
+                    return content.strip()
                 return "Аналитика формируется..."
 
-            # Вытаскиваем сгенерированные ИИ глубокие тексты
+            # Вытаскиваем очищенные тексты блоков
             text_small = get_block(full_text, "МЕЛКИЙ_ОПТ")
             text_large = get_block(full_text, "КРУПНЫЙ_ОПТ")
             text_checklist = get_block(full_text, "ЧЕК_ЛИСТ")
             text_verdict = get_block(full_text, "ВЕРДИКТ")
 
-            # Отрисовываем интерфейс
+            # Отрисовываем интерфейс 
             st.markdown("### 🎯 Стратегические сценарии закупки")
             tab1, tab2 = st.tabs(["🚀 Тестирование рынка и мелкий опт", "📦 Масштабирование и крупный опт"])
             
             with tab1:
-                # Нативный контейнер Streamlit с рамкой
                 with st.container(border=True):
                     st.markdown("#### 💡 Экспертный разбор: Стратегия гибкого старта")
-                    # Мягко очищаем возможные дубликаты звездочек от модели перед выводом
-                    clean_small = text_small.replace("** **", "**").replace("****", "**")
-                    st.markdown(clean_small)
+                    st.markdown(text_small)
                 
             with tab2:
                 with st.container(border=True):
-                    st.markdown("#### 🏭 Экспертный разбор: Стратегия оптимизации затрат")
-                    clean_large = text_large.replace("** **", "**").replace("****", "**")
-                    st.markdown(clean_large)
+                    st.markdown("#### 🏭 Экспертный разбор: Стратегия优化 затрат")
+                    st.markdown(text_large)
 
             # Выводим динамический чек-лист
             with st.expander("🔍 Инструкция для закупщика: Что проверить перед подписанием договора?", expanded=True):
