@@ -224,27 +224,35 @@ if query:
                     
                     with tab1:
                         with st.container(border=True):
-                            st.markdown("#### 💡 Стратегия гибкого старта")
+                            st.markdown("#### 💡 Экспертный разбор: Стратегия гибкого старта")
                             st.markdown(clean_markdown_artifacts(text_small))
                         
                     with tab2:
                         with st.container(border=True):
-                            st.markdown("#### 🏭 Стратегия оптимизации затрат")
+                            st.markdown("#### 🏭 Экспертный разбор: Стратегия оптимизации затрат")
                             st.markdown(clean_markdown_artifacts(text_large))
     
                     if text_checklist and text_checklist != "Аналитика формируется...":
-                        with st.expander("🔍 Что проверить перед подписанием договора?", expanded=True):
+                        with st.expander("🔍 Инструкция для закупщика: Что проверить перед подписанием договора?", expanded=True):
                             st.markdown(clean_markdown_artifacts(text_checklist))
                     
                     if text_verdict and text_verdict != "Аналитика формируется...":
                         st.divider()
-                        st.markdown(f"⚖️ **Итоговая рекомендация ИИ:** {clean_markdown_artifacts(text_verdict)}")
+                        st.markdown("⚖️ **Итоговая рекомендация ИИ:**")
+                        # Выводим сам текст на новой строке под заголовком
+                        st.markdown(clean_markdown_artifacts(text_verdict))
                 
                 else:
-                    # ПЛАН Б: Если модель проигнорировала теги и выдала сплошной текст
-                    # МЫ НЕ создаем пустых контейнеров внизу. Просто выводим чистый текст
+                    # ПЛАН Б: Если модель проигнорировала теги разделения
                     st.markdown("### 🤖 Итоговое экспертное заключение ИИ")
-                    st.markdown(clean_markdown_artifacts(full_text))
+                    
+                    # Ищем фразу "Итоговая рекомендация ИИ:" или подобные в самом тексте Плана Б 
+                    # и заменяем её на перенос строки, чтобы не дублировать главный заголовок выше
+                    clean_full_text = clean_markdown_artifacts(full_text)
+                    
+                    # Добавляем красивый перенос строки для списков
+                    st.markdown("⚖️ **Аналитический разбор контрагентов:**")
+                    st.markdown(clean_full_text)
 
         else:
             st.info("Пока в базе демо-прототипа есть категории: 'упаковка' и 'молоко'. Попробуйте ввести их.")
