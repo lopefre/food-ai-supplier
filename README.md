@@ -1,7 +1,5 @@
 # food-ai-supplier
 
-Архитектурное описание решения
-
 Прототип разработан на стеке **Python + Streamlit + LangChain / Mistral AI**.
 
 В качестве концепта (Proof of Concept) архитектура разделена на два изолированных слоя: **слой извлечения данных (Data Extraction)** и **аналитический слой (LLM Reasoning)**.
