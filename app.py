@@ -19,16 +19,13 @@ class SupplierInfo(BaseModel):
     delivery_terms: Optional[str] = Field(None, description="Условия доставки")
     contacts: List[str] = Field(description="Телефоны, email или ссылки")
 
-# Инициализируем модель через секреты Streamlit (чтобы не светить ключ в коде)
-# Ключ вы получите бесплатно на console.mistral.ai
+# Инициализируем модель через секреты Streamlit
 if "MISTRAL_API_KEY" in st.secrets:
     api_key = st.secrets["MISTRAL_API_KEY"]
 else:
     api_key = st.sidebar.text_input("Введите Mistral API Key", type="password")
 
 # 2. Имитация поисковика (для прототипа)
-# Чтобы не усложнять код с Selenium на чужих сайтах (их часто блокируют в облаке),
-# мы зашьем 3 реальных сайта под категории, как разрешено в ТЗ для демонстрации логики!
 MOCK_SERP = {
     "упаковка": [
         {"name": "ОптиКом (Упаковка)", "url": "https://opti-com.ru", "text": "ОптиКом — комплексный поставщик упаковки и расходных материалов для фудсервиса. Минимальная сумма заказа для бесплатной доставки по Москве — 5000 рублей. Регионы работы: вся Россия. Контакты: +7 (495) 980-00-00, info@opticom.ru. Вся продукция сертифицирована по ГОСТ и ISO."},
@@ -46,7 +43,6 @@ def analyze_with_ai(text: str, url: str, key: str):
         llm = ChatMistralAI(model="open-mistral-7b", temperature=0, mistral_api_key=key)
         
         # Мы явно просим модель вернуть JSON и описываем схему прямо в промпте.
-        # Это самый надежный способ, который работает на любых версиях библиотек.
         system_instruction = """Ты — ИИ-ассистент отдела закупок. Изучи сырой текст веб-страницы поставщика 
         и извлеки из него ключевую информацию.
         
@@ -91,7 +87,7 @@ def analyze_with_ai(text: str, url: str, key: str):
         return SupplierInfo(company_name="Ошибка парсинга JSON", contacts=[])
         
     except Exception as e:
-        # Ловим ту самую сетевую ошибку httpx или ошибку авторизации
+        # Ловим сетевую ошибку httpx или ошибку авторизации
         st.error(f"❌ Произошла ошибка при обращении к ИИ-модели: {str(e)}")
         st.info("💡 Проверьте, правильно ли указан MISTRAL_API_KEY в Advanced Settings -> Secrets на Streamlit Cloud.")
         # Возвращаем пустой объект, чтобы приложение не падало в белый экран, а продолжало работать
@@ -134,17 +130,27 @@ if query:
                     st.markdown(f"🚚 **Условия доставки:** {card.delivery_terms or 'По запросу'}")
                     st.markdown(f"📞 **Контакты:** {', '.join(card.contacts)}")
             
-            # СУПЕР-ФИЧА ДЛЯ ИИ-ИНЖЕНЕРА: Агрегированное сравнение (Пункт "логика работы" из ТЗ)
+            # Агрегированное сравнение
             st.divider()
             st.subheader("🤖 ИИ-Сравнение и рекомендация закупщику")
             
-            # Просим ту же модель сделать текстовое саммари-сравнение
-            llm_compare = ChatMistralAI(model="open-mistral-7b", temperature=0.3, mistral_api_key=api_key)
-            all_cards_text = "\n".join([f"Компания: {c.company_name}, Мин.заказ: {c.min_order}, Доставка: {c.delivery_terms}" for c in results])
-            
-            compare_prompt = f"Ты эксперт по закупкам. Сравни этих поставщиков продуктов питания и кратко по пунктам порекомендуй, с кем лучше связаться под запрос '{query}':\n{all_cards_text}"
-            summary = llm_compare.invoke(compare_prompt)
-            st.info(summary.content)
+            with st.container(border=True):
+                # Просим ту же модель сделать текстовое саммари-сравнение
+                llm_compare = ChatMistralAI(model="open-mistral-7b", temperature=0.3, mistral_api_key=api_key)
+                all_cards_text = "\n".join([f"Компания: {c.company_name}, Мин.заказ: {c.min_order}, Доставка: {c.delivery_terms}" for c in results])
+                
+                # Добавим в промпт требование использовать красивую разметку списков и жирный шрифт
+                compare_prompt = f"""Ты эксперт по закупкам. Сравни этих поставщиков продуктов питания и кратко по пунктам порекомендуй, с кем лучше связаться под запрос '{query}'.
+                
+                Обязательно используй списки (маркеры • или цифры), выделяй ключевые сущности, названия компаний и условия жирным шрифтом, чтобы отчет было легко читать закупщику. 
+                Данные для анализа:
+                {all_cards_text}"""
+                
+                with st.spinner("Формирую экспертное заключение..."):
+                    summary = llm_compare.invoke(compare_prompt)
+                
+                # Выводим как обычный чистый текст с поддержкой Markdown на стандартном фоне приложения
+                st.markdown(summary.content)
             
         else:
             st.info("Пока в базе демо-прототипа есть категории: 'упаковка' и 'молоко'. Попробуйте ввести их.")
