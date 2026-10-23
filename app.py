@@ -43,7 +43,7 @@ MOCK_SERP = {
 def analyze_with_ai(text: str, url: str, key: str):
     try:
         # Инициализируем базовую модель напрямую, без автоматического структурирования LangChain
-        llm = ChatMistralAI(model="Pixtral-12B-2409", temperature=0, mistral_api_key=key)
+        llm = ChatMistralAI(model="mistral-small-latest", temperature=0, mistral_api_key=key)
         
         # Мы явно просим модель вернуть JSON и описываем схему прямо в промпте.
         # Это самый надежный способ, который работает на любых версиях библиотек.
@@ -138,7 +138,7 @@ if query:
             st.subheader("🤖 ИИ-Сравнение и рекомендация закупщику")
             
             # Просим ту же модель сделать текстовое саммари-сравнение
-            llm_compare = ChatMistralAI(model="Pixtral-12B-2409", temperature=0.3, mistral_api_key=api_key)
+            llm_compare = ChatMistralAI(model="mistral-small-latest", temperature=0.3, mistral_api_key=api_key)
             all_cards_text = "\n".join([f"Компания: {c.company_name}, Мин.заказ: {c.min_order}, Доставка: {c.delivery_terms}" for c in results])
             
             compare_prompt = f"Ты эксперт по закупкам. Сравни этих поставщиков продуктов питания и кратко по пунктам порекомендуй, с кем лучше связаться под запрос '{query}':\n{all_cards_text}"
