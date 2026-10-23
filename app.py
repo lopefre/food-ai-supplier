@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from langchain_mistralai import ChatMistralAI
 import time
+import json
+from langchain_core.messages import HumanMessage
 
 # Настройка страницы Streamlit
 st.set_page_config(page_title="Поиск Поставщиков Food", layout="wide")
@@ -39,10 +41,62 @@ MOCK_SERP = {
 
 # 3. Функция ИИ-анализа текста
 def analyze_with_ai(text: str, url: str, key: str):
-    llm = ChatMistralAI(model="mistral-large-latest", temperature=0, mistral_api_key=key)
-    structured_llm = llm.with_structured_output(SupplierInfo)
-    prompt = f"Изучи текст сайта поставщика и вытащи данные. Сайт: {url}\nТекст:\n{text}"
-    return structured_llm.invoke(prompt)
+    try:
+        # Инициализируем базовую модель напрямую, без автоматического структурирования LangChain
+        llm = ChatMistralAI(model="mistral-large-latest", temperature=0, mistral_api_key=key)
+        
+        # Мы явно просим модель вернуть JSON и описываем схему прямо в промпте.
+        # Это самый надежный способ, который работает на любых версиях библиотек.
+        system_instruction = """Ты — ИИ-ассистент отдела закупок. Изучи сырой текст веб-страницы поставщика 
+        и извлеки из него ключевую информацию.
+        
+        Ты ДОЛЖЕН ответить СТРОГО в формате JSON без каких-либо вводных слов или разметки ```json.
+        JSON должен иметь следующие ключи:
+        {
+            "company_name": "Название компании или бренда (обязательно строка)",
+            "min_order": "Минимальный объем заказа или сумма, если указаны (строка или null)",
+            "delivery_terms": "Условия и регионы доставки (строка или null)",
+            "contacts": ["Список контактов: телефоны, email или ссылки (массив строк)"]
+        }
+        """
+        
+        prompt = f"{system_instruction}\n\nСайт: {url}\nТекст страницы:\n{text}"
+        
+        # Делаем обычный вызов модели
+        response = llm.invoke(prompt)
+        
+        # Извлекаем сырой текст ответа
+        raw_content = response.content.strip()
+        
+        # На всякий случай очищаем от возможных маркдаун-тегов, если модель их добавила
+        if raw_content.startswith("```"):
+            lines = raw_content.split("\n")
+            if lines[0].startswith("```json") or lines[0].startswith("```"):
+                raw_content = "\n".join(lines[1:-1])
+        
+        # Парсим строку в стандартный Python-словарь
+        data = json.loads(raw_content)
+        
+        # Оборачиваем обратно в Pydantic модель, чтобы остальной код Streamlit не сломался
+        return SupplierInfo(
+            company_name=data.get("company_name", "Неизвестный поставщик"),
+            min_order=data.get("min_order"),
+            delivery_terms=data.get("delivery_terms"),
+            contacts=data.get("contacts", [])
+        )
+        
+    except json.JSONDecodeError:
+        # Если модель выдала невалидный JSON
+        st.error("⚠️ Ошибка: Модель вернула некорректный формат данных. Пробую вернуть дефолтную карточку.")
+        return SupplierInfo(company_name="Ошибка парсинга JSON", contacts=[])
+        
+    except Exception as e:
+        # Ловим ту самую сетевую ошибку httpx или ошибку авторизации
+        st.error(f"❌ Произошла ошибка при обращении к ИИ-модели: {str(e)}")
+        st.info("💡 Проверьте, правильно ли указан MISTRAL_API_KEY в Advanced Settings -> Secrets на Streamlit Cloud.")
+        # Возвращаем пустой объект, чтобы приложение не падало в белый экран, а продолжало работать
+        return SupplierInfo(company_name="Ошибка авторизации/сети API", contacts=["Проверьте ключи в Secrets"])
+
 
 # 4. Интерфейс пользователя
 query = st.text_input("Введите категорию товара (например: упаковка или молоко):").lower().strip()
