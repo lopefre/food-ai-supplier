@@ -122,15 +122,30 @@ if query:
                     results.append(ai_data)
             time.sleep(2)
             # Отображаем красивые карточки (Выполнение ТЗ: "помогать принять решение")
-            cols = st.columns(len(results))
-            for idx, card in enumerate(results):
-                with cols[idx]:
-                    st.markdown("### 🏢")
-                    st.subheader(card.company_name)
-                    st.markdown(f"🌐 **Сайт:** {MOCK_SERP[matched_category][idx]['url']}")
-                    st.markdown(f"📦 **Минимальный заказ:** {card.min_order or 'Не указан'}")
-                    st.markdown(f"🚚 **Условия доставки:** {card.delivery_terms or 'По запросу'}")
-                    st.markdown(f"📞 **Контакты:** {', '.join(card.contacts)}")
+                        # Отображаем красивые карточки (Выполнение ТЗ: "помогать принять решение")
+            # Если результатов несколько, бьем на колонки. Если один — выводим на всю ширину, чтобы избежать пустых блоков.
+            if len(results) > 1:
+                cols = st.columns(len(results))
+                for idx, card in enumerate(results):
+                    with cols[idx]:
+                        with st.container(border=True): # Добавим рамку для аккуратности
+                            st.markdown("### 🏢")
+                            st.subheader(card.company_name)
+                            st.markdown(f"🌐 **Сайт:** {MOCK_SERP[matched_category][idx]['url']}")
+                            st.markdown(f"📦 **Минимальный заказ:** {card.min_order or 'Не указан'}")
+                            st.markdown(f"🚚 **Условия доставки:** {card.delivery_terms or 'По запросу'}")
+                            st.markdown(f"📞 **Контакты:** {', '.join(card.contacts)}")
+            else:
+                # Одиночная карточка во всю ширину экрана — никаких пустых серых колонок снизу!
+                if results:
+                    card = results[0]
+                    with st.container(border=True):
+                        st.markdown("### 🏢")
+                        st.subheader(card.company_name)
+                        st.markdown(f"🌐 **Сайт:** {MOCK_SERP[matched_category][0]['url']}")
+                        st.markdown(f"📦 **Минимальный заказ:** {card.min_order or 'Не указан'}")
+                        st.markdown(f"🚚 **Условия доставки:** {card.delivery_terms or 'По запросу'}")
+                        st.markdown(f"📞 **Контакты:** {', '.join(card.contacts)}")
             
             # Агрегированное сравнение
             st.divider()
