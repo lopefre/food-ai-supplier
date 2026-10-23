@@ -11,7 +11,7 @@ import re
 
 
 # Настройка страницы Streamlit
-st.set_page_config(page_title="Поиск Поставщиков Food", layout="wide")
+st.set_page_config(page_title="Поиск поставщиков Food", layout="wide")
 st.title("🥑 Сервис поиска и анализа поставщиков питания")
 
 # 1. Структура данных для ИИ
@@ -195,21 +195,35 @@ if query:
                     
                     with tab1:
                         with st.container(border=True):
-                            st.markdown("#### 💡 Экспертный разбор: Стратегия гибкого старта")
+                            st.markdown("#### 💡 Стратегия гибкого старта")
                             st.markdown(text_small)
                         
                     with tab2:
                         with st.container(border=True):
-                            st.markdown("#### 🏭 Экспертный разбор: Стратегия оптимизации затрат")
+                            st.markdown("#### 🏭 Стратегия оптимизации затрат")
                             st.markdown(text_large)
 
-                    if text_checklist:
-                        with st.expander("🔍 Инструкция для закупщика: Что проверить перед подписанием договора?", expanded=True):
-                            st.markdown(text_checklist)
+                # Выводим динамический чек-лист
+                if text_checklist:
+                    with st.expander("🔍 Что проверить перед подписанием договора?", expanded=True):
+                        # Очищаем чек-лист от возможных артефактов на стыке тегов
+                        clean_checklist = text_checklist.replace("** **", " ").replace("****", "")
+                        st.markdown(clean_checklist)
+                
+                # Финальный красивый акцент на итоговом вердикте без артефактов разметки
+                if text_verdict:
+                    st.markdown("---")
+                    # Очищаем финальный вердикт от сломанных двойных звёздочек, которые оставляет модель
+                    clean_verdict = text_verdict.replace("** **", " ").replace("****", "")
+                    # Дополнительно убираем звёздочки, если модель написала "ЭкоНива**" или "Компания**"
+                    clean_verdict = clean_verdict.replace("** ", " ").replace(" **", " ")
                     
-                    if text_verdict:
-                        st.markdown("---")
-                        st.markdown(f"⚖️ **Итоговая рекомендация ИИ:** {text_verdict}")
+                    # Проверяем: если на концах слов всё ещё висят две звёздочки, срезаем их аккуратно
+                    if clean_verdict.endswith("**"):
+                        clean_verdict = clean_verdict[:-2]
+                        
+                    st.markdown(f"⚖️ **Итоговая рекомендация ИИ** {clean_verdict}")
+
                 else:
                     # План Б, если регулярка дала сбой на границах
                     st.markdown("### 🤖 Итоговая аналитика ИИ")
