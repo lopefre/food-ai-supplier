@@ -222,16 +222,16 @@ if query:
                     
                     with tab1:
                         with st.container(border=True):
-                            st.markdown("#### 💡 Экспертный разбор: Стратегия гибкого старта")
+                            st.markdown("#### 💡 Стратегия гибкого старта")
                             st.markdown(clean_markdown_artifacts(text_small))
                         
                     with tab2:
                         with st.container(border=True):
-                            st.markdown("#### 🏭 Экспертный разбор: Стратегия оптимизации затрат")
+                            st.markdown("#### 🏭 Стратегия оптимизации затрат")
                             st.markdown(clean_markdown_artifacts(text_large))
     
                     if text_checklist and text_checklist != "Аналитика формируется...":
-                        with st.expander("🔍 Инструкция для закупщика: Что проверить перед подписанием договора?", expanded=True):
+                        with st.expander("🔍 Что проверить перед подписанием договора?", expanded=True):
                             st.markdown(clean_markdown_artifacts(text_checklist))
                     
                     if text_verdict and text_verdict != "Аналитика формируется...":
