@@ -131,8 +131,9 @@ if query:
                     st.markdown(f"📞 **Контакты:** {', '.join(card.contacts)}")
             
             # Агрегированное сравнение
+                        # СУПЕР-ФИЧА ДЛЯ ИИ-ИНЖЕНЕРА: Динамический ИИ-анализ с глубокой проработкой
             st.divider()
-            st.subheader("🤖 ИИ-Сравнение и рекомендация закупщику")
+            st.subheader("🤖 ИИ-Аналитика и экспертное заключение")
             
             with st.spinner("ИИ проводит глубокий сравнительный анализ контрагентов..."):
                 llm_compare = ChatMistralAI(model="open-mistral-7b", temperature=0.2, mistral_api_key=api_key)
