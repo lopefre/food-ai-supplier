@@ -21,9 +21,6 @@ class SupplierInfo(BaseModel):
     delivery_terms: Optional[str] = None  # Условия и регионы доставки (опционально)
     contacts: List[str]  # Массив извлеченных контактов (телефон, email, ссылки)
 ```
-
-Используйте код с осторожностью.
-
 ---
 
 3. Компоненты системы и Пайплайн обработки (AI Pipeline)
